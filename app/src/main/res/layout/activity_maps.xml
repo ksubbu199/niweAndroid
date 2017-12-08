@@ -1,20 +1,135 @@
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.ksubbu199.niwe.niwe.MapsActivity" >
+    android:background="@android:color/white"
+    android:orientation="vertical">
 
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|top"
-        android:text="Demo Button"
-        android:padding="10dp"
-        android:layout_marginTop="20dp"
-        android:paddingRight="10dp"
-        android:paddingEnd="10dp"/>
-</fragment>
+        <fragment
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="com.sample.sishin.maplocation.MapsActivity" >
+
+            <fragment
+                android:id="@+id/place_autocomplete_fragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#ffffff"
+                android:textColor="#000000"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginLeft="15dp"
+                android:layout_marginStart="15dp"
+
+                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
+                />
+
+
+                <ImageView
+                    android:id="@+id/view-switch"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:paddingRight="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingLeft="10dp"
+                    android:paddingStart="10dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginLeft="15dp"
+                    android:layout_gravity="start|bottom"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitXY"
+                    android:background="#ffffff"
+                    android:layout_marginBottom="60dp"
+                    android:src="@drawable/sat" />
+
+
+                    <ImageView
+                            android:id="@+id/gps-icon"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:paddingRight="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingLeft="10dp"
+                            android:paddingStart="10dp"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp"
+                            android:layout_marginEnd="15dp"
+                            android:layout_marginRight="15dp"
+                            android:layout_gravity="end|bottom"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitXY"
+                            android:background="#ffffff"
+                            android:layout_marginBottom="60dp"
+                            android:src="@drawable/gps" />
+
+
+                <!--<TextView-->
+                    <!--android:id="@+id/text_view_verdictuff"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_gravity="end|bottom"-->
+                    <!--android:paddingRight="30dp"-->
+                    <!--android:paddingEnd="30dp"-->
+                    <!--android:paddingLeft="30dp"-->
+                    <!--android:paddingStart="30dp"-->
+                    <!--android:paddingTop="12dp"-->
+                    <!--android:paddingBottom="12dp"-->
+                    <!--android:background="#ffffff"-->
+                    <!--android:textColor="#0000ff"-->
+                    <!--android:text="D" />-->
+
+            <LinearLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/text_view_group"
+                android:layout_width="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginLeft="15dp"
+                android:layout_marginStart="15dp"
+                android:layout_height="match_parent">
+
+
+
+                <TextView
+                    android:id="@+id/text_view_verdict"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="start|bottom"
+                    android:paddingRight="30dp"
+                    android:paddingEnd="30dp"
+                    android:paddingLeft="30dp"
+                    android:paddingStart="30dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:background="#ffffff"
+                    android:textColor="#0000ff"
+                    android:text="Status" />
+
+                <TextView
+                    android:id="@+id/text_view_address"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="start|bottom"
+                    android:paddingRight="30dp"
+                    android:paddingEnd="30dp"
+                    android:paddingLeft="30dp"
+                    android:paddingStart="30dp"
+                    android:background="#ffffff"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:textColor="#000000"
+                    android:maxLines="1"
+                    android:text="lolwa this is going to be a big string.. so dont worry about this.. okay???" />
+            </LinearLayout>
+
+        </fragment>
+
+    <!--</FrameLayout>-->
+</RelativeLayout>
