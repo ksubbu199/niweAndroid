@@ -1,7 +1,9 @@
 package com.ksubbu199.niwe.niwe;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
@@ -10,6 +12,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
@@ -19,6 +22,8 @@ import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,24 +57,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final int PERMISSION_ACCESS_FINE_LOCATION = 0,PERMISSION_ACCESS_COARSE_LOCATION = 1;
 
-    /*
-        Adjust these values as per requirement
-     */
-
-
-    private final double AEP_LIMIT = 1398320, CUF_LIMIT = 15.9705;
-
-    private boolean isAreaGood(double aep, double cuf)
-    {
-        return aep >  AEP_LIMIT || cuf > CUF_LIMIT;
-    }
-
     private GoogleMap mMap;
+    private  Dialog gpsDialog,internetDialog;
     private static final String TAG = "MapActivity";
     private Marker marker;
     private boolean locationPermissions=false;
     private LocationManager locationManager;
     private Location location;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,16 +73,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        TextView verdictV = findViewById(R.id.text_view_verdict);
+
+
+        //TextView verdictV = findViewById(R.id.text_view_verdict);
         TextView addrV = findViewById(R.id.text_view_address);
         addrV.setText("Select a region");
-        verdictV.setText("Status");
-        verdictV.setTextColor(Color.BLUE);
+       // verdictV.setText("Status");
+        //verdictV.setTextColor(Color.BLUE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-            if (!doWeHaveLocationPerm()) {
-                Log.d(TAG, "Asking fine permissions");
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_ACCESS_FINE_LOCATION);
+            if (doWeHaveLocationPerm()==false) {
+                getLocPerm();
             }
 
 
@@ -125,7 +121,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if(doWeHaveLocationPerm())
                     {
                         Location loc=getLocation();
-                        setMap(new LatLng(loc.getLatitude(),loc.getLongitude()));
+                        if(loc!=null)
+                            setMap(new LatLng(loc.getLatitude(),loc.getLongitude()));
+                        else{
+                            Toast.makeText(MapsActivity.this, "Unable to get your location!", Toast.LENGTH_SHORT).show();
+                        }
                     }
                     else
                     {
@@ -155,7 +155,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         };
         imageViewT.setOnClickListener(clickListenerT);
+        gpsDialog = new Dialog(this);
 
+        gpsDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        gpsDialog.setContentView(R.layout.dialog);
+
+
+//        final EditText editText = (EditText) dialog.findViewById(R.id.editText);
+        Button btnOn  = gpsDialog.findViewById(R.id.save);
+        Button btnCancel = gpsDialog.findViewById(R.id.cancel);
+
+        btnOn.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                Intent gpsOptionsIntent = new Intent(
+                        android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(gpsOptionsIntent);
+            }
+        });
+
+        btnCancel.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                gpsDialog.cancel();
+                Toast.makeText(MapsActivity.this, "GPS action unavailable!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        internetDialog = new Dialog(this);
+
+        internetDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        internetDialog.setContentView(R.layout.internet_dialog);
+
+        internetDialog.setCancelable(false);
+
+//        final EditText editText = (EditText) dialog.findViewById(R.id.editText);
+        Button btnOnInternet  = internetDialog.findViewById(R.id.save);
+        Button btnCancelInternet = internetDialog.findViewById(R.id.cancel);
+
+        btnOnInternet.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                internetDialog.dismiss();
+                startActivityForResult(new Intent(android.provider.Settings.ACTION_SETTINGS), 0);
+            }
+        });
+
+        btnCancelInternet.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                try{
+                    MapsActivity.this.finishAffinity();
+                }
+                catch(Exception e){
+                    try{
+                        finish();
+                    }
+                    catch(Exception f)
+                    {
+                        Toast.makeText(MapsActivity.this, "Soemthing went Wrong!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        });
+
+        if(isNetworkConnected()==false)
+        {
+            enableInernet();
+        }
+
+    }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return cm.getActiveNetworkInfo() != null;
     }
 
     private void getLocPerm()
@@ -165,6 +235,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMap(LatLng latLng){
+        if(isNetworkConnected()==false)
+        {
+            enableInernet();
+            return;
+        }
+        if(latLng==null) return;
         getData(latLng);
         String addr=getCompleteAddressString(latLng.latitude,latLng.longitude);
         Log.d(TAG, "addr:"+addr);
@@ -174,7 +250,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         moveToCurrentLocation(latLng);
         TextView addrV = findViewById(R.id.text_view_address);
         if(addr.isEmpty())
-            addrV.setText("OOPS!if this persists clear data of app");
+            addrV.setText("Internet connection is not proper, try again!");
         else
             addrV.setText(addr);
     }
@@ -255,7 +331,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private boolean doWeHaveLocationPerm(){
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        //return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        String permission = "android.permission.ACCESS_FINE_LOCATION";
+        int res = this.checkCallingOrSelfPermission(permission);
+        Log.w(TAG, "Location permission: !"+(res == PackageManager.PERMISSION_GRANTED));
+        return (res == PackageManager.PERMISSION_GRANTED);
+
     }
 
     private boolean isLocationEnabled(Context context) {
@@ -281,14 +362,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public void enableLocation(){
+        if(gpsDialog.isShowing()==false)
+            gpsDialog.show();
+    }
+
+    public void enableInernet(){
+        if(internetDialog.isShowing()==false)
+            internetDialog.show();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        if(isLocationEnabled(this)==true&&gpsDialog.isShowing()==true)
+        {
+            gpsDialog.dismiss();
+        }
+        Log.i("test", "onResume");
+        if(isNetworkConnected()==false){
+            enableInernet();
+        }
+
+    }
+
+
+    private Location getLastKnownLocation() {
+        LocationManager mLocationManager;
+        mLocationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
+        List<String> providers = mLocationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            Location l = mLocationManager.getLastKnownLocation(provider);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+    }
+
     public Location getLocation() {
         if (!doWeHaveLocationPerm()) {
                 return null;
         }
         if (isLocationEnabled(this)) {
-            Criteria criteria = new Criteria();
-            String bestProvider = String.valueOf(locationManager.getBestProvider(criteria, true));
-            Location location = locationManager.getLastKnownLocation(bestProvider);
+            Location location = getLastKnownLocation();
             if (location != null) {
                 Log.e(TAG, "GPS is on");
                 double latitude = location.getLatitude();
@@ -298,20 +420,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             else{
                 Log.e(TAG, "Else brah");
-                locationManager.requestLocationUpdates(bestProvider, 1000, 0, this);
+                //enableLocation();
                 return null;
             }
         }
         else
         {
             Log.e(TAG, "Else fucked up");
-            Toast.makeText(this, "Please Turn-On GPS!", Toast.LENGTH_SHORT).show();
+            enableLocation();
             return null;
         }
     }
 
     private void getData(LatLng ll)
     {
+        if(isNetworkConnected()==false)
+        {
+            enableInernet();
+        }
         RequestQueue queue = Volley.newRequestQueue(this);
         String url ="http://14.139.172.6:8080/getLatInfo?lat="+ll.latitude+"&long="+ll.longitude+"&area="+900;
         Log.d(TAG, url);
@@ -379,36 +505,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 TextView dni = v.findViewById(R.id.tv_dni);
                 TextView dhi = v.findViewById(R.id.tv_dhi);
 
-                TextView verdictV = findViewById(R.id.text_view_verdict);
+                TextView aep_value = v.findViewById(R.id.tv_aep_value);
+                TextView cuf_value = v.findViewById(R.id.tv_cuf_value);
+                TextView ghi_value = v.findViewById(R.id.tv_ghi_value);
+                TextView dni_value = v.findViewById(R.id.tv_dni_value);
+                TextView dhi_value = v.findViewById(R.id.tv_dhi_value);
+
+               // TextView verdictV = findViewById(R.id.text_view_verdict);
 
                 if(arg0.getSnippet()!=null)
                 {
                     try{
                         JSONObject obj = new JSONObject(arg0.getSnippet());
                         LatLng latLng = arg0.getPosition();
-                        aep.setText("AEP:"+obj.getJSONObject("AEP").getString("value")+" "+obj.getJSONObject("AEP").getString("units"));
-                        cuf.setText("CUF:"+obj.getJSONObject("CUF").getString("value")+" "+obj.getJSONObject("CUF").getString("units"));
-                        ghi.setText("GHI:"+obj.getJSONObject("GHI").getString("value")+" "+obj.getJSONObject("GHI").getString("units"));
-                        dhi.setText("DHI:"+obj.getJSONObject("DHI").getString("value")+" "+obj.getJSONObject("DHI").getString("units"));
-                        dni.setText("DNI:"+obj.getJSONObject("DNI").getString("value")+" "+obj.getJSONObject("DNI").getString("units"));
+                        aep.setText(obj.getJSONObject("AEP").getString("units")+"(kWh)");
+                        cuf.setText(obj.getJSONObject("CUF").getString("units"));
+                        ghi.setText(obj.getJSONObject("GHI").getString("units"));
+                        dhi.setText(obj.getJSONObject("DHI").getString("units"));
+                        dni.setText(obj.getJSONObject("DNI").getString("units"));
 
-                        if(isAreaGood(Double.parseDouble(obj.getJSONObject("AEP").getString("value")),Double.parseDouble(obj.getJSONObject("CUF").getString("value"))))
-                        {
-                            verdictV.setText("Good");
-                            verdictV.setTextColor(Color.parseColor("#4CAF50"));
-                        }
-                        else
-                        {
-                            verdictV.setText("Bad");
-                            verdictV.setTextColor(Color.RED);
-                        }
+                        aep_value.setText(obj.getJSONObject("AEP").getString("value"));
+                        cuf_value.setText(obj.getJSONObject("CUF").getString("value"));
+                        ghi_value.setText(obj.getJSONObject("GHI").getString("value"));
+                        dhi_value.setText(obj.getJSONObject("DHI").getString("value"));
+                        dni_value.setText(obj.getJSONObject("DNI").getString("value"));
+
+//                        if(isAreaGood(Double.parseDouble(obj.getJSONObject("AEP").getString("value")),Double.parseDouble(obj.getJSONObject("CUF").getString("value"))))
+//                        {
+//                            verdictV.setText("Good");
+//                            verdictV.setTextColor(Color.parseColor("#4CAF50"));
+//                        }
+//                        else
+//                        {
+//                            verdictV.setText("Bad");
+//                            verdictV.setTextColor(Color.RED);
+//                        }
 
 
                     }
                     catch (JSONException e)
                     {
-                        verdictV.setText("Status");
-                        verdictV.setTextColor(Color.BLUE);
+                        //verdictV.setText("Status");
+                        //verdictV.setTextColor(Color.BLUE);
                         e.printStackTrace();
                     }
                 }
@@ -419,8 +557,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     dni.setText("");
                     dhi.setText("");
                     aep.setText("");
-                    verdictV.setText("Status");
-                    verdictV.setTextColor(Color.BLUE);
+                    //verdictV.setText("Status");
+                    //verdictV.setTextColor(Color.BLUE);
                 }
                 return v;
             }
