@@ -2,6 +2,7 @@ package com.ksubbu199.niwe.niwe;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -24,7 +25,11 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import static com.google.android.gms.maps.GoogleMap.MAP_TYPE_SATELLITE;
@@ -220,6 +225,80 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             enableInernet();
         }
 
+        final RadioGroup radioGroup = findViewById(R.id.select_search);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
+        {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                // checkedId is the RadioButton selected
+
+                View radioButton = radioGroup.findViewById(checkedId);
+                int index = radioGroup.indexOfChild(radioButton);
+
+                // Add logic here
+
+                //Fragment mapsFragment = getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+                LinearLayout maps = findViewById(R.id.place_autocomplete_layout);
+                LinearLayout latlong = findViewById(R.id.input_layout);
+                switch (index) {
+                    case 0: // first button
+                        //if(maps != null && maps.getVisibility() == LinearLayout.GONE)
+                        //{
+                        latlong.setVisibility(LinearLayout.GONE);
+                        maps.setVisibility(LinearLayout.VISIBLE);
+                        //}
+                        Toast.makeText(getApplicationContext(), "Selected button number " + index, 500).show();
+                        break;
+                    case 1: // secondbutton
+                        //if(latlong != null && latlong.getVisibility() == LinearLayout.GONE)
+                        //{
+
+
+                        maps.setVisibility(LinearLayout.GONE);
+                        latlong.setVisibility(LinearLayout.VISIBLE);
+                        //}
+                        Toast.makeText(getApplicationContext(), "Selected button number " + index, 500).show();
+                        break;
+                }
+
+            }
+        });
+
+        Button lat_long_form_btn = findViewById(R.id.lat_long_btn);
+
+        lat_long_form_btn.setOnClickListener(new Button.OnClickListener(){
+            public void onClick(View v) {
+                EditText lat = findViewById(R.id.input_lat);
+                EditText lng = findViewById(R.id.input_long);
+
+                try{
+                    double lat_v = Double.parseDouble(lat.getText().toString());
+                    double lng_v = Double.parseDouble(lng.getText().toString());
+                    if(isValidLatLng(lat_v,lng_v)==false){
+                        throw new Exception();
+                    }
+                    setMap(new LatLng(lat_v,lng_v));
+                }
+                catch (Exception e){
+                    Toast.makeText(getApplicationContext(),"Invalid Lattitude and Longitude",Toast.LENGTH_SHORT).show();
+                    //What should happen when the input string is no double?
+                }
+
+            }
+        });
+
+    }
+
+    public boolean isValidLatLng(double lat, double lng){
+        if(lat < -90 || lat > 90)
+        {
+            return false;
+        }
+        else if(lng < -180 || lng > 180)
+        {
+            return false;
+        }
+        return true;
     }
 
     private boolean isNetworkConnected() {
@@ -241,6 +320,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return;
         }
         if(latLng==null) return;
+        EditText lat = findViewById(R.id.input_lat);
+        EditText lng = findViewById(R.id.input_long);
+        lat.setText(String.valueOf(latLng.latitude));
+        lng.setText(String.valueOf(latLng.longitude));
         getData(latLng);
         String addr=getCompleteAddressString(latLng.latitude,latLng.longitude);
         Log.d(TAG, "addr:"+addr);
@@ -250,7 +333,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         moveToCurrentLocation(latLng);
         TextView addrV = findViewById(R.id.text_view_address);
         if(addr.isEmpty())
-            addrV.setText("Internet connection is not proper, try again!");
+            addrV.setText("Unable to fetch address!");
         else
             addrV.setText(addr);
     }
@@ -530,24 +613,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         dhi_value.setText(obj.getJSONObject("DHI").getString("value"));
                         dni_value.setText(obj.getJSONObject("DNI").getString("value"));
 
-//                        if(isAreaGood(Double.parseDouble(obj.getJSONObject("AEP").getString("value")),Double.parseDouble(obj.getJSONObject("CUF").getString("value"))))
-//                        {
-//                            verdictV.setText("Good");
-//                            verdictV.setTextColor(Color.parseColor("#4CAF50"));
-//                        }
-//                        else
-//                        {
-//                            verdictV.setText("Bad");
-//                            verdictV.setTextColor(Color.RED);
-//                        }
-
-
                     }
                     catch (JSONException e)
                     {
-                        //verdictV.setText("Status");
-                        //verdictV.setTextColor(Color.BLUE);
                         e.printStackTrace();
+                        cuf.setText("Something went wrong!");
+                        ghi.setText("");
+                        dni.setText("");
+                        dhi.setText("");
+                        aep.setText("");
                     }
                 }
                 else

@@ -2,4 +2,9 @@
     <string name="app_name">Niwe Solar App</string>
     <string name="title_activity_maps">Niwe Solar App</string>
     <string name="form_username">Enter location</string>
+    <string-array name="search_options">
+        <item>Place</item>
+        <item>Co-ordinates</item>
+    </string-array>
+
 </resources>
